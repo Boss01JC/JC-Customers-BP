@@ -430,7 +430,6 @@
                 <option value="">-- เลือก --</option>
                 <option value="jiancha">เจี้ยนชา</option>
                 <option value="polly">พอลลี่ เอทิเยร์</option>
-                <option value="both">ทั้งคู่</option>
               </select>
             </div>
           </div>
@@ -440,28 +439,10 @@
               <input type="text" name="location" placeholder="เช่น สุขุมวิท กรุงเทพ" required>
             </div>
           </div>
-          <div class="info-grid">
+          <div class="info-grid full">
             <div class="form-group">
-              <label>งบประมาณในการลงทุน (บาท) <span class="required">*</span></label>
-              <select name="investmentBudget" required>
-                <option value="">-- เลือกช่วงงบประมาณ --</option>
-                <option value="under500k">ต่ำกว่า 500,000 บาท</option>
-                <option value="500k-1m">500,000 – 1,000,000 บาท</option>
-                <option value="1m-2m">1,000,000 – 2,000,000 บาท</option>
-                <option value="2m-3m">2,000,000 – 3,000,000 บาท</option>
-                <option value="over3m">มากกว่า 3,000,000 บาท</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>แหล่งที่มาของเงินลงทุน</label>
-              <select name="fundingSource">
-                <option value="">-- เลือก --</option>
-                <option value="self">เงินทุนส่วนตัว</option>
-                <option value="loan">กู้สินเชื่อธนาคาร</option>
-                <option value="partner">ร่วมทุนกับหุ้นส่วน</option>
-                <option value="family">เงินทุนจากครอบครัว</option>
-                <option value="mixed">ผสมผสาน</option>
-              </select>
+              <label>งบประมาณในการลงทุน (บาท)</label>
+              <textarea name="investmentBudget" placeholder="ระบุงบประมาณที่มีและแหล่งที่มาของเงินลงทุน"></textarea>
             </div>
           </div>
         </div>
@@ -584,7 +565,6 @@
             <option value="">ทั้งหมด</option>
             <option value="jiancha">เจี้ยนชา</option>
             <option value="polly">พอลลี่ เอทิเยร์</option>
-            <option value="both">ทั้งคู่</option>
           </select>
         </div>
       </div>
