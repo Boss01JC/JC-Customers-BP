@@ -421,8 +421,8 @@
               <input type="tel" name="phone" placeholder="0X-XXXX-XXXX" required>
             </div>
             <div class="form-group">
-              <label>อีเมล</label>
-              <input type="email" name="email" placeholder="email@example.com">
+              <label>อีเมล <span class="required">*</span></label>
+              <input type="email" name="email" placeholder="email@example.com" required>
             </div>
             <div class="form-group">
               <label>เลือกแบรนด์ <span class="required">*</span></label>
@@ -433,16 +433,20 @@
               </select>
             </div>
           </div>
-          <div class="info-grid full">
+          <div class="info-grid">
             <div class="form-group">
               <label>สถานที่ที่สนใจ <span class="required">*</span></label>
               <input type="text" name="location" placeholder="เช่น สุขุมวิท กรุงเทพ" required>
             </div>
+            <div class="form-group">
+              <label>อาชีพที่ประกอบอยู่ <span class="required">*</span></label>
+              <input type="text" name="occupation" placeholder="เช่น พนักงานบริษัท, ธุรกิจส่วนตัว, นักเรียน/นักศึกษา" required>
+            </div>
           </div>
           <div class="info-grid full">
             <div class="form-group">
-              <label>งบประมาณในการลงทุน (บาท)</label>
-              <textarea name="investmentBudget" placeholder="ระบุงบประมาณที่มีและแหล่งที่มาของเงินลงทุน"></textarea>
+              <label>งบประมาณในการลงทุน (บาท) <span class="required">*</span></label>
+              <textarea name="investmentBudget" placeholder="ระบุงบประมาณที่มีและแหล่งที่มาของเงินลงทุน" required></textarea>
             </div>
           </div>
         </div>
@@ -528,10 +532,6 @@
       <div class="summary-box" id="summaryBox">
         <h3>📋 สรุปข้อมูลของคุณ</h3>
         <div class="summary-grid" id="summaryContent"></div>
-        <div class="export-buttons">
-          <button class="btn btn-primary" onclick="doPDF()">📄 บันทึก PDF (พิมพ์)</button>
-          <button class="btn btn-secondary" onclick="doPNG()">🖼️ บันทึก PNG</button>
-        </div>
       </div>
     </div>
   </div>
@@ -609,7 +609,11 @@
   <div class="modal-content">
     <div class="modal-header">
       <h2>📋 รายละเอียดลูกค้า</h2>
-      <button class="close-btn" onclick="closeModal('detailModal')">&times;</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary btn-sm" onclick="doPDF()">📄 PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="doPNG()">🖼️ PNG</button>
+        <button class="close-btn" onclick="closeModal('detailModal')">&times;</button>
+      </div>
     </div>
     <div id="detailContent"></div>
   </div>
@@ -637,7 +641,7 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3RkZ2hsZmV0emdwZWZhbmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1Mzg3NDcsImV4cCI6MjEwNTExNDc0N30.ef2eVqcx3EvSO4nhF4DbSVxrcAL8aMxeq6h1DE0t9U4';
   const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
   function normalize(r) {
-    return { _id: r.id, _ts: r.created_at, fullName: r.full_name, phone: r.phone, email: r.email, brand: r.brand, location: r.location, investmentBudget: r.investment_budget, businessGoal: r.business_goal, goalStrategy: r.goal_strategy, shopManagement: r.shop_management, expectedRevenue: r.expected_revenue, breakeven: r.breakeven, contingency: r.contingency, hrStrategy: r.hr_strategy, staffContingency: r.staff_contingency, competitionStrategy: r.competition_strategy, strength: r.strength, promotion: r.promotion, additionalInfo: r.additional_info };
+    return { _id: r.id, _ts: r.created_at, fullName: r.full_name, phone: r.phone, email: r.email, brand: r.brand, location: r.location, occupation: r.occupation, investmentBudget: r.investment_budget, businessGoal: r.business_goal, goalStrategy: r.goal_strategy, shopManagement: r.shop_management, expectedRevenue: r.expected_revenue, breakeven: r.breakeven, contingency: r.contingency, hrStrategy: r.hr_strategy, staffContingency: r.staff_contingency, competitionStrategy: r.competition_strategy, strength: r.strength, promotion: r.promotion, additionalInfo: r.additional_info };
   }
 
   function checkAdminPw() {
@@ -685,7 +689,8 @@
     const data = Object.fromEntries(new FormData(this));
     const payload = {
       full_name: data.fullName, phone: data.phone, email: data.email || null,
-      brand: data.brand, location: data.location, investment_budget: data.investmentBudget || null,
+      brand: data.brand, location: data.location, occupation: data.occupation || null,
+      investment_budget: data.investmentBudget || null,
       business_goal: data.businessGoal || null, goal_strategy: data.goalStrategy || null,
       shop_management: data.shopManagement || null,
       expected_revenue: parseFloat(data.expectedRevenue) || null,
@@ -718,10 +723,11 @@
     const items = [
       ['👤 ชื่อ', data.fullName],
       ['📱 โทร', data.phone],
+      ['📧 อีเมล', data.email],
+      ['💼 อาชีพ', data.occupation],
       ['📍 สถานที่', data.location],
       ['🏪 แบรนด์', brandName(data.brand)],
-      ['💵 งบลงทุน', budgetName(data.investmentBudget)],
-      ['🏦 แหล่งทุน', fundingName(data.fundingSource)],
+      ['💵 งบลงทุน', data.investmentBudget],
       ['💰 รายได้/เดือน', fmtNum(data.expectedRevenue) + ' บาท'],
       ['⏱️ คืนทุนใน', data.breakeven + ' ปี'],
     ];
@@ -787,16 +793,17 @@
   function viewDetail(id) {
     const d = allData.find(x => x._id===id);
     if (!d) return;
+    lastData = d;
     document.getElementById('detailContent').innerHTML = `
       <div class="detail-section">
         <h3>👤 ข้อมูลผู้ประกอบการ</h3>
         <div class="detail-row"><strong>ชื่อ</strong><span>${esc(d.fullName)}</span></div>
         <div class="detail-row"><strong>เบอร์</strong><span>${esc(d.phone)}</span></div>
         <div class="detail-row"><strong>อีเมล</strong><span>${esc(d.email||'-')}</span></div>
+        <div class="detail-row"><strong>อาชีพ</strong><span>${esc(d.occupation||'-')}</span></div>
         <div class="detail-row"><strong>แบรนด์</strong><span>${brandName(d.brand)}</span></div>
         <div class="detail-row"><strong>สถานที่</strong><span>${esc(d.location)}</span></div>
-        <div class="detail-row"><strong>งบประมาณลงทุน</strong><span>${budgetName(d.investmentBudget)}</span></div>
-        <div class="detail-row"><strong>แหล่งที่มาของทุน</strong><span>${fundingName(d.fundingSource)}</span></div>
+        <div class="detail-row"><strong>งบประมาณลงทุน</strong><span>${esc(d.investmentBudget||'-')}</span></div>
       </div>
       <div class="detail-section">
         <h3>❶ เป้าหมายธุรกิจ</h3>
@@ -880,6 +887,7 @@
         <div class="p-row"><strong>ชื่อ</strong><span>${esc(d.fullName)}</span></div>
         <div class="p-row"><strong>เบอร์</strong><span>${esc(d.phone)}</span></div>
         <div class="p-row"><strong>อีเมล</strong><span>${esc(d.email||'-')}</span></div>
+        <div class="p-row"><strong>อาชีพ</strong><span>${esc(d.occupation||'-')}</span></div>
         <div class="p-row"><strong>แบรนด์</strong><span>${brandName(d.brand)}</span></div>
         <div class="p-row"><strong>สถานที่</strong><span>${esc(d.location)}</span></div>
       </div>
@@ -933,7 +941,7 @@
 
     // Build content blocks
     const sections = [
-      { title:'👤 ข้อมูลผู้ประกอบการ', rows:[['ชื่อ',d.fullName],['เบอร์',d.phone],['อีเมล',d.email||'-'],['แบรนด์',brandName(d.brand)],['สถานที่',d.location]] },
+      { title:'👤 ข้อมูลผู้ประกอบการ', rows:[['ชื่อ',d.fullName],['เบอร์',d.phone],['อีเมล',d.email||'-'],['อาชีพ',d.occupation||'-'],['แบรนด์',brandName(d.brand)],['สถานที่',d.location]] },
       { title:'❶ เป้าหมายธุรกิจ', blocks:[{l:'เป้าหมาย',t:d.businessGoal},{l:'แนวทาง',t:d.goalStrategy}] },
       { title:'❷ แผนการบริหารร้าน', rows:[['รายได้/เดือน',fmtNum(d.expectedRevenue)+' บาท'],['คืนทุนใน',d.breakeven+' ปี']], blocks:[{l:'แผน',t:d.shopManagement},{l:'แนวทางแก้ไข',t:d.contingency}] },
       { title:'❸ การจัดการบุคลากร', blocks:[{l:'กลยุทธ์',t:d.hrStrategy},{l:'กรณีฉุกเฉิน',t:d.staffContingency}] },
