@@ -632,8 +632,13 @@
   let adminUnlocked = false;
 
   // ─── Admin gate ──────────────────────────────────────────────────────────────
-  // Change ADMIN_PW to any password you want
   const ADMIN_PW = 'bdjiancha';
+  const SUPABASE_URL = 'https://zhstdghlfetzgpefangq.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3RkZ2hsZmV0emdwZWZhbmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1Mzg3NDcsImV4cCI6MjEwNTExNDc0N30.ef2eVqcx3EvSO4nhF4DbSVxrcAL8aMxeq6h1DE0t9U4';
+  const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+  function normalize(r) {
+    return { _id: r.id, _ts: r.created_at, fullName: r.full_name, phone: r.phone, email: r.email, brand: r.brand, location: r.location, investmentBudget: r.investment_budget, businessGoal: r.business_goal, goalStrategy: r.goal_strategy, shopManagement: r.shop_management, expectedRevenue: r.expected_revenue, breakeven: r.breakeven, contingency: r.contingency, hrStrategy: r.hr_strategy, staffContingency: r.staff_contingency, competitionStrategy: r.competition_strategy, strength: r.strength, promotion: r.promotion, additionalInfo: r.additional_info };
+  }
 
   function checkAdminPw() {
     const val = document.getElementById('adminPwInput').value;
@@ -671,17 +676,33 @@
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById(name).classList.add('active');
     btn.classList.add('active');
-    if (name === 'crm') { loadAll(); updateStats(); renderTable(); }
+    if (name === 'crm') { loadAll().then(() => { updateStats(); renderTable(); }); }
   }
 
   // ─── Form submit ─────────────────────────────────────────────────────────────
-  document.getElementById('planForm').addEventListener('submit', function(e) {
+  document.getElementById('planForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(this));
-    const key = 'bpd_' + Date.now();
-    const record = { ...data, _id: key, _ts: new Date().toISOString() };
-    localStorage.setItem(key, JSON.stringify(record));
-    lastData = record;
+    const payload = {
+      full_name: data.fullName, phone: data.phone, email: data.email || null,
+      brand: data.brand, location: data.location, investment_budget: data.investmentBudget || null,
+      business_goal: data.businessGoal || null, goal_strategy: data.goalStrategy || null,
+      shop_management: data.shopManagement || null,
+      expected_revenue: parseFloat(data.expectedRevenue) || null,
+      breakeven: parseFloat(data.breakeven) || null, contingency: data.contingency || null,
+      hr_strategy: data.hrStrategy || null, staff_contingency: data.staffContingency || null,
+      competition_strategy: data.competitionStrategy || null, strength: data.strength || null,
+      promotion: data.promotion || null, additional_info: data.additionalInfo || null
+    };
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/business_plans', {
+        method: 'POST',
+        headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) { const err = await res.text(); alert('บันทึกไม่สำเร็จ: ' + err); return; }
+    } catch(err) { alert('บันทึกไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'); return; }
+    lastData = { ...data, _id: null, _ts: new Date().toISOString() };
 
     const msg = document.getElementById('successMessage');
     msg.classList.add('show');
@@ -710,14 +731,12 @@
   }
 
   // ─── CRM ─────────────────────────────────────────────────────────────────────
-  function loadAll() {
-    allData = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k.startsWith('bpd_')) continue;
-      try { allData.push(JSON.parse(localStorage.getItem(k))); } catch(_) {}
-    }
-    allData.sort((a,b) => (b._ts||'').localeCompare(a._ts||''));
+  async function loadAll() {
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/business_plans?select=*&order=created_at.desc', { headers: SB_HEADERS });
+      const rows = await res.json();
+      allData = Array.isArray(rows) ? rows.map(normalize) : [];
+    } catch(_) { allData = []; }
     filteredData = [...allData];
   }
 
@@ -807,16 +826,10 @@
     document.getElementById('detailModal').classList.add('show');
   }
 
-  function deleteRecord(id) {
+  async function deleteRecord(id) {
     if (!confirm('ลบข้อมูลนี้?')) return;
-    localStorage.removeItem(id);
-    loadAll(); updateStats(); renderTable();
-  }
-
-  function clearAllData() {
-    if (!confirm('ลบข้อมูลทั้งหมด?')) return;
-    Object.keys(localStorage).filter(k=>k.startsWith('bpd_')).forEach(k=>localStorage.removeItem(k));
-    loadAll(); updateStats(); renderTable();
+    await fetch(SUPABASE_URL + '/rest/v1/business_plans?id=eq.' + id, { method: 'DELETE', headers: SB_HEADERS });
+    await loadAll(); updateStats(); renderTable();
   }
 
   function closeModal(id) { document.getElementById(id).classList.remove('show'); }
@@ -1033,11 +1046,7 @@
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
-  function getLatestData() {
-    if (lastData) return lastData;
-    const keys=Object.keys(localStorage).filter(k=>k.startsWith('bpd_')).sort().reverse();
-    return keys.length ? JSON.parse(localStorage.getItem(keys[0])) : null;
-  }
+  function getLatestData() { return lastData; }
   function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function fmtNum(n){ return Number(n||0).toLocaleString('th-TH'); }
   function brandName(b){ return {jiancha:'เจี้ยนชา',polly:'พอลลี่ เอทิเยร์',both:'ทั้งคู่'}[b]||b||'-'; }
